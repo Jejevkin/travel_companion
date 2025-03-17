@@ -1,37 +1,37 @@
 from logging.config import dictConfig
 
-LOG_FORMAT = '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+LOG_FORMAT = (
+    '[%(asctime)s] (%(levelname)s) %(name)s '
+    '[%(filename)s:%(lineno)d] => %(message)s'
+)
+
+ACCESS_LOG_FORMAT = (
+    '[%(asctime)s] %(client_addr)s - "%(request_line)s" %(status_code)s'
+)
+
 LOG_DEFAULT_HANDLERS = ['console']
 
 LOGGING = {
     'version': 1,
     'disable_existing_loggers': False,
     'formatters': {
-        'verbose': {'format': LOG_FORMAT},
-        'default': {
-            '()': 'uvicorn.logging.DefaultFormatter',
-            'fmt': '%(levelprefix)s %(message)s',
-            'use_colors': None,
+        'default_verbose': {
+            'format': LOG_FORMAT,
         },
-        'access': {
+        'access_verbose': {
             '()': 'uvicorn.logging.AccessFormatter',
-            'fmt': '%(levelprefix)s %(client_addr)s - "%(request_line)s" %(status_code)s',
+            'fmt': ACCESS_LOG_FORMAT,
         },
     },
     'handlers': {
         'console': {
             'level': 'DEBUG',
             'class': 'logging.StreamHandler',
-            'formatter': 'verbose',
-        },
-        'default': {
-            'class': 'logging.StreamHandler',
-            'formatter': 'default',
-            'stream': 'ext://sys.stdout',
+            'formatter': 'default_verbose',
         },
         'access': {
             'class': 'logging.StreamHandler',
-            'formatter': 'access',
+            'formatter': 'access_verbose',
             'stream': 'ext://sys.stdout',
         },
     },

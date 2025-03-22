@@ -1,5 +1,6 @@
 from async_fastapi_jwt_auth import AuthJWT
-from pydantic import Field
+from pydantic import Field, computed_field
+from pydantic_core import MultiHostUrl
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -25,10 +26,34 @@ class Settings(BaseSettings):
     psql_db: str = Field(default='storage_db', env='PSQL_DB')
     db_engine_echo: bool = Field(default=False, env='DB_ENGINE_ECHO')
 
+    @computed_field
+    @property
+    def SQLALCHEMY_SYNC_DATABASE_URI(self) -> MultiHostUrl:
+        return MultiHostUrl.build(
+            scheme='postgresql+psycopg2',
+            username=self.psql_user,
+            password=self.psql_password,
+            host=self.psql_host,
+            port=self.psql_port,
+            path=self.psql_db,
+        )
+
+    @computed_field
+    @property
+    def SQLALCHEMY_ASYNC_DATABASE_URI(self) -> MultiHostUrl:
+        return MultiHostUrl.build(
+            scheme='postgresql+asyncpg',
+            username=self.psql_user,
+            password=self.psql_password,
+            host=self.psql_host,
+            port=self.psql_port,
+            path=self.psql_db,
+        )
+
 
 settings = Settings()
 
 
 @AuthJWT.load_config
-def get_config():
+def get_config() -> Settings:
     return settings

@@ -4,6 +4,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.responses import ORJSONResponse
 
+from api.v1 import auth
 from core.config import settings
 from core.logger import setup_logging
 
@@ -24,12 +25,10 @@ app = FastAPI(
     docs_url='/api/openapi',
     openapi_url='/api/openapi.json',
     default_response_class=ORJSONResponse,
+    lifespan=lifespan,
 )
 
-
-@app.get('/')
-async def root():
-    return {'message': 'Welcome to Travel Companion!'}
+app.include_router(auth.router, prefix=f'/api/{settings.api_version}/auth', tags=['auth'])
 
 
 async def startup():

@@ -26,6 +26,10 @@ class Settings(BaseSettings):
     psql_db: str = Field(default='storage_db', env='PSQL_DB')
     db_engine_echo: bool = Field(default=False, env='DB_ENGINE_ECHO')
 
+    # Настройки Redis
+    redis_host: str = Field(default='localhost', env='REDIS_HOST')
+    redis_port: int = Field(default=6379, env='REDIS_PORT')
+
     @computed_field
     @property
     def SQLALCHEMY_SYNC_DATABASE_URI(self) -> MultiHostUrl:

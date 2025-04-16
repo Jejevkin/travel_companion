@@ -36,8 +36,7 @@ class BaseRepository(ABC):
 
         except IntegrityError as e:
             await self.db.rollback()
-            logger.error(f'Ошибка при сохранении в базу данных: {e}')
-            raise HTTPException(status_code=HTTPStatus.CONFLICT, detail='Entity already exists')
+            return None
         except Exception as e:
             await self.db.rollback()
             logger.error(f'Неизвестная ошибка при сохранении в базу данных: {e}')

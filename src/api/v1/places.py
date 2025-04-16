@@ -81,10 +81,10 @@ async def get_favorite_places(
 
 
 @router.post('/favorite',
-             status_code=HTTPStatus.OK,
+             status_code=HTTPStatus.CREATED,
              description='Save favorite place', )
 async def save_favorite_place(
-        place: FavoritePlaceCreate,
+        favorite_place: FavoritePlaceCreate,
         authorize: AuthorizeDep,
         place_service: PlaceServiceDep,
 ) -> FavoritePlaceResponse:
@@ -93,10 +93,16 @@ async def save_favorite_place(
     """
     await authorize.jwt_required()
     user_id = await authorize.get_jwt_subject()
+    place = await place_service.get_place_by_id(favorite_place.place_id)
+
+    if not place:
+        logger.warning(f'Место с ID \'{favorite_place.place_id}\' не найдено.')
+        raise HTTPException(HTTPStatus.NOT_FOUND, 'Place not found')
+
     if favorite_place := await place_service.save_favorite_place(place, UUID(user_id)):
         logger.info(f'Пользователь {user_id} добавил место {place.place_id} в избранное.')
         return favorite_place
-    raise HTTPException(HTTPStatus.BAD_REQUEST, 'Favorite place not saved')
+    raise HTTPException(HTTPStatus.CONFLICT, 'Favorite place already exists')
 
 
 @router.delete('/favorite/{place_id}',

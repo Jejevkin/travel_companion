@@ -13,7 +13,7 @@ from db.database import get_session
 from db.redis import get_redis
 from models.places import Place, SearchHistory, FavoritePlace
 from schemas.places import NearbyPlaceRequest, NearbyPlaceResponse, SearchPlaceRequest, SearchPlaceResponse, \
-    FavoritePlaceCreate, FavoritePlaceResponse
+    FavoritePlaceResponse
 from services.base_repository import BaseRepository
 
 logger = logging.getLogger(__name__)
@@ -31,10 +31,13 @@ class PlaceServiceABC(ABC):
     async def get_favorite_places(self, user_id: UUID) -> list[FavoritePlaceResponse] | None:
         pass
 
-    async def save_favorite_place(self, place: FavoritePlaceCreate, user_id: UUID) -> FavoritePlaceResponse | None:
+    async def save_favorite_place(self, place: Place, user_id: UUID) -> FavoritePlaceResponse | None:
         pass
 
     async def delete_favorite_place(self, place_id: str, user_id: UUID) -> bool:
+        pass
+
+    async def get_place_by_id(self, place_id: str) -> Place | None:
         pass
 
 
@@ -69,7 +72,7 @@ class PlaceService(BaseRepository, PlaceServiceABC):
         logger.info('Пользователь получил список избранных мест.' if favorite_places else 'Список избранных мест пуст.')
         return favorite_places
 
-    async def save_favorite_place(self, place: FavoritePlaceCreate, user_id: UUID) -> FavoritePlaceResponse | None:
+    async def save_favorite_place(self, place: Place, user_id: UUID) -> FavoritePlaceResponse | None:
         """
         Сохраняет выбранное место в избранное пользователя.
         """
@@ -77,7 +80,7 @@ class PlaceService(BaseRepository, PlaceServiceABC):
             logger.info('Место успешно добавлено в избранное.')
             return saved_favorite
 
-        logger.error('Не удалось добавить место в избранное.')
+        logger.error('Данные уже существуют в избранном.')
         return None
 
     async def delete_favorite_place(self, place_id: str, user_id: UUID) -> bool:
@@ -91,6 +94,17 @@ class PlaceService(BaseRepository, PlaceServiceABC):
             return await self._delete_entity(favorite_place)
         logger.warning(f'Не удалось удалить место {place_id} из избранного пользователя {user_id}.')
         return False
+
+    async def get_place_by_id(self, place_id: str) -> Place | None:
+        """
+        Получает место по ID.
+        """
+        if place := await self._execute_query(Place, Place.place_id == place_id):
+            logger.debug(f'Место с ID \'{place_id}\' найдено.')
+            return place
+
+        logger.warning(f'Место с ID \'{place_id}\' не найдено.')
+        return None
 
     async def _fetch_places(self, url: str, params: dict) -> list[dict]:
         """

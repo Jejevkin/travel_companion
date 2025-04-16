@@ -8,7 +8,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from db.database import get_session
 from models.users import User
 from schemas.users import UserCreate
-from .base_repository import BaseRepository
+from services.base_repository import BaseRepository
 
 logger = logging.getLogger(__name__)
 DatabaseDep = Annotated[AsyncSession, Depends(get_session)]
@@ -48,7 +48,7 @@ class UserService(BaseRepository, UserServiceABC):
         Создает нового пользователя.
         """
         new_user = User.from_schema(user_data)
-        if saved_user := await self._save_entity(new_user):
+        if saved_user := await self._save_entities(new_user):
             logger.info(f'Пользователь \'{new_user.login}\' успешно создан.')
             return saved_user
 

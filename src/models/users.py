@@ -1,15 +1,16 @@
 import uuid
 from datetime import datetime
 
-from db.database import NewBase as Base
-from schemas.users import UserCreate
 from sqlalchemy import Column, DateTime, String
 from sqlalchemy.dialects.postgresql import UUID
 from werkzeug.security import check_password_hash, generate_password_hash
 
+from db.database import NewBase as Base
+from schemas.users import UserCreate
+
 
 class User(Base):
-    __tablename__ = 'users_database'
+    __tablename__ = 'users'
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4, unique=True, nullable=False)
     login = Column(String(255), unique=True, nullable=False)

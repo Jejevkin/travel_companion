@@ -3,22 +3,29 @@ from abc import ABC
 from typing import Annotated
 from uuid import UUID
 
-import httpx
 from fastapi import Depends
+from httpx import AsyncClient
 from redis.asyncio import Redis
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from core.config import settings
+from core.http import get_http_client
 from db.database import get_session
 from db.redis import get_redis
 from models.places import Place, SearchHistory, FavoritePlace
-from schemas.places import NearbyPlaceRequest, NearbyPlaceResponse, SearchPlaceRequest, SearchPlaceResponse, \
+from schemas.places import (
+    NearbyPlaceRequest,
+    NearbyPlaceResponse,
+    SearchPlaceRequest,
+    SearchPlaceResponse,
     FavoritePlaceResponse
+)
 from services.base_repository import BaseRepository
 
 logger = logging.getLogger(__name__)
 DatabaseDep = Annotated[AsyncSession, Depends(get_session)]
 RedisDep = Annotated[Redis, Depends(get_redis)]
+HttpClientDep = Annotated[AsyncClient, Depends(get_http_client)]
 
 
 class PlaceServiceABC(ABC):
@@ -42,10 +49,10 @@ class PlaceServiceABC(ABC):
 
 
 class PlaceService(BaseRepository, PlaceServiceABC):
-    def __init__(self, db: AsyncSession, redis: Redis):
+    def __init__(self, db: AsyncSession, redis: Redis, client: AsyncClient):
         super().__init__(db)
         self.redis = redis
-        self.client = httpx.AsyncClient()
+        self.client = client
 
     async def search_places(self, place: SearchPlaceRequest, user_id: UUID | None) -> list[SearchPlaceResponse]:
         """
@@ -141,5 +148,5 @@ class PlaceService(BaseRepository, PlaceServiceABC):
         return validated_items
 
 
-def get_place_service(db: DatabaseDep, redis: RedisDep) -> PlaceServiceABC:
-    return PlaceService(db, redis)
+def get_place_service(db: DatabaseDep, redis: RedisDep, client: HttpClientDep) -> PlaceServiceABC:
+    return PlaceService(db, redis, client)

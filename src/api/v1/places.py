@@ -10,8 +10,14 @@ from fastapi_cache.decorator import cache
 
 from core.common import request_key_builder
 from core.config import settings
-from schemas.places import (NearbyPlaceRequest, NearbyPlaceResponse, SearchPlaceRequest,
-                            SearchPlaceResponse, FavoritePlaceCreate, FavoritePlaceResponse)
+from schemas.places import (
+    NearbyPlaceRequest,
+    NearbyPlaceResponse,
+    SearchPlaceRequest,
+    SearchPlaceResponse,
+    FavoritePlaceCreate,
+    FavoritePlaceResponse
+)
 from services.place import PlaceServiceABC, get_place_service
 
 router = APIRouter()

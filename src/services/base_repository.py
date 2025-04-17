@@ -1,8 +1,6 @@
 import logging
 from abc import ABC
-from http import HTTPStatus
 
-from fastapi import HTTPException
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select

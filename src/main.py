@@ -2,6 +2,7 @@ import logging
 import traceback
 from contextlib import asynccontextmanager
 
+import httpx
 from async_fastapi_jwt_auth.exceptions import MissingTokenError, InvalidHeaderError, JWTDecodeError
 from fastapi import FastAPI, Request, status
 from fastapi.responses import ORJSONResponse
@@ -10,9 +11,10 @@ from fastapi_cache.backends.redis import RedisBackend
 from redis.asyncio import Redis
 
 from api.v1 import auth, places
+from core import http as http_module
 from core.config import settings
 from core.logger import setup_logging
-from db.redis import redis
+from db import redis as redis_module
 
 setup_logging()
 logger = logging.getLogger(__name__)
@@ -89,13 +91,16 @@ app.include_router(places.router, prefix=f'/api/{settings.api_version}/places', 
 
 async def startup():
     logger.info('Приложение запускается...')
-    redis = Redis(host=settings.redis_host, port=settings.redis_port)
-    FastAPICache.init(RedisBackend(redis), prefix='fastapi-cache')
+    http_module.http_client = httpx.AsyncClient()
+    redis_module.redis = Redis(host=settings.redis_host, port=settings.redis_port)
+    FastAPICache.init(RedisBackend(redis_module.redis), prefix='fastapi-cache')
     logger.info('Приложение запущено.')
 
 
 async def shutdown():
     logger.info('Приложение останавливается...')
-    if redis:
-        await redis.close()
+    if http_module.http_client:
+        await http_module.http_client.aclose()
+    if redis_module.redis:
+        await redis_module.redis.close()
     logger.info('Приложение остановлено.')

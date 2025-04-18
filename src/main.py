@@ -1,6 +1,7 @@
 import logging
 import traceback
 from contextlib import asynccontextmanager
+from core.exceptions import ExternalServiceError
 
 import httpx
 from async_fastapi_jwt_auth.exceptions import MissingTokenError, InvalidHeaderError, JWTDecodeError
@@ -66,6 +67,16 @@ async def jwt_decode_exception_handler(request: Request, exc: JWTDecodeError):
     """
     return ORJSONResponse(
         status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+        content={'detail': exc.message}
+    )
+
+@app.exception_handler(ExternalServiceError)
+async def external_service_exception_handler(request: Request, exc: ExternalServiceError):
+    """
+    Обработка ошибки внешнего сервиса.
+    """
+    return ORJSONResponse(
+        status_code=exc.status_code,
         content={'detail': exc.message}
     )
 

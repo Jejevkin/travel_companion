@@ -1,14 +1,16 @@
 import logging
 from abc import ABC
+from http import HTTPStatus
 from typing import Annotated
 from uuid import UUID
 
 from fastapi import Depends
-from httpx import AsyncClient
+from httpx import AsyncClient, HTTPStatusError, RequestError
 from redis.asyncio import Redis
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from core.config import settings
+from core.exceptions import ExternalServiceError
 from core.http import get_http_client
 from db.database import get_session
 from db.redis import get_redis
@@ -117,8 +119,19 @@ class PlaceService(BaseRepository, PlaceServiceABC):
         """
         Выполняет запрос к API LocationIQ и возвращает данные в формате JSON.
         """
-        response = await self.client.get(url, params=params)
-        response.raise_for_status()
+        try:
+            response = await self.client.get(url, params=params)
+            response.raise_for_status()
+        except HTTPStatusError as e:
+            raise ExternalServiceError(
+                status_code=e.response.status_code,
+                message=f'Ошибка LocationIQ: {e.response.text}'
+            ) from e
+        except RequestError as e:
+            raise ExternalServiceError(
+                status_code=HTTPStatus.SERVICE_UNAVAILABLE,
+                message='LocationIQ временно недоступен'
+            ) from e
         logger.info('Запрос к API LocationIQ выполнен успешно.')
         return response.json()
 

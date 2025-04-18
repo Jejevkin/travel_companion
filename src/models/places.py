@@ -1,7 +1,16 @@
 import uuid
 from datetime import datetime
 
-from sqlalchemy import Column, DateTime, String, Float, ForeignKey, UniqueConstraint
+from sqlalchemy import (
+    Column,
+    DateTime,
+    String,
+    Float,
+    ForeignKey,
+    UniqueConstraint,
+    Text,
+    CheckConstraint,
+)
 from sqlalchemy.dialects.postgresql import UUID
 
 from db.database import NewBase as Base
@@ -11,14 +20,19 @@ from schemas.places import BasePlaceResponse
 class Place(Base):
     __tablename__ = 'places'
 
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4, unique=True, nullable=False)
-    place_id = Column(String, unique=True, nullable=False)
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4, nullable=False)
+    place_id = Column(String(255), unique=True, nullable=False)
     lat = Column(Float, nullable=False)
     lon = Column(Float, nullable=False)
-    display_name = Column(String)
+    display_name = Column(Text)
     place_class = Column(String(255))
     place_type = Column(String(255))
     created_at = Column(DateTime, default=datetime.utcnow)
+
+    __table_args__ = (
+        CheckConstraint('lat BETWEEN -90.0 AND 90.0', name='ck_places_lat_range'),
+        CheckConstraint('lon BETWEEN -180.0 AND 180.0', name='ck_places_lon_range'),
+    )
 
     @classmethod
     def from_schema(cls, place: 'BasePlaceResponse') -> 'Place':
@@ -41,7 +55,7 @@ class SearchHistory(Base):
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4, unique=True, nullable=False)
     user_id = Column(UUID(as_uuid=True), ForeignKey('users.id'), nullable=False)
     place_id = Column(String, ForeignKey('places.place_id'), nullable=False)
-    search_date = Column(DateTime, default=datetime.utcnow)
+    search_date = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
     __table_args__ = (
         UniqueConstraint('user_id', 'place_id', name='search_history_user_place_unique'),

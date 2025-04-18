@@ -1,16 +1,21 @@
 from datetime import datetime
 
-from pydantic import BaseModel, Field, UUID4
+from pydantic import (
+    BaseModel,
+    Field,
+    constr,
+    UUID4,
+)
 
 
 class BaseCoordinates(BaseModel):
-    lat: float = Field(..., description='Latitude')
-    lon: float = Field(..., description='Longitude')
+    lat: float = Field(..., gt=-90, lt=90, description='Latitude')
+    lon: float = Field(..., gt=-180, lt=180, description='Longitude')
 
 
 class BasePlaceResponse(BaseCoordinates):
-    place_id: str
-    display_name: str
+    place_id: constr(strip_whitespace=True, min_length=1, max_length=255)
+    display_name: constr(strip_whitespace=True, min_length=1)
     place_class: str | None = Field(default=None, alias='class')
     place_type: str | None = Field(default=None, alias='type')
 
@@ -19,7 +24,7 @@ class SearchPlaceRequest(BaseModel):
     query: str = Field(..., description='Search query')
     limit: int = Field(10, ge=1, le=50, description='Maximum number of results')
 
-    def to_params(self, api_key: str):
+    def to_params(self, api_key: str) -> dict:
         return {
             'key': api_key,
             'q': self.query,
@@ -32,12 +37,14 @@ class SearchPlaceResponse(BasePlaceResponse):
 
 
 class NearbyPlaceRequest(BaseCoordinates):
-    tags: list[str] | None = Field(default_factory=list,
-                                   description='Search tag or advanced tags. Example: \'amenity:* or !amenity:gym\'')
+    tags: list[str] | None = Field(
+        default_factory=list,
+        description='Search tag or advanced tags. Example: \'amenity:* or !amenity:gym\''
+    )
     radius: int = Field(500, ge=100, le=5000, description='Search radius in meters')
     limit: int = Field(10, ge=1, le=50, description='Maximum number of results')
 
-    def to_params(self, api_key: str):
+    def to_params(self, api_key: str) -> dict:
         return {
             'key': api_key,
             'lat': self.lat,
@@ -61,5 +68,5 @@ class FavoritePlaceCreate(BaseModel):
 class FavoritePlaceResponse(BaseModel):
     id: UUID4
     user_id: UUID4
-    place_id: str
+    place_id: constr(strip_whitespace=True, min_length=1, max_length=255)
     created_at: datetime

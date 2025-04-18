@@ -144,20 +144,20 @@ class PlaceService(BaseRepository, PlaceServiceABC):
         """
         validated_items = [model.model_validate(item) for item in raw_data]
 
-        entities_to_save = []
+        places_to_save: list[Place] = []
+        history_to_save: list[SearchHistory] = []
+
         for item in validated_items:
-            new_place = Place.from_schema(item)
-            entities_to_save.append(new_place)
-
+            places_to_save.append(Place.from_schema(item))
             if user_id:
-                history_record = SearchHistory(
-                    user_id=user_id,
-                    place_id=new_place.place_id,
-                )
-                entities_to_save.append(history_record)
+                history_to_save.append(SearchHistory(user_id=user_id,
+                                                     place_id=item.place_id))
+        if saved_places := await self._save_entities(places_to_save):
+            logger.info(f'Успешно добавлено {len(saved_places)} мест в базу данных.')
 
-        if saved_entities := await self._save_entities(entities_to_save):
-            logger.info(f'Данные {saved_entities} успешно сохранены в базе данных.')
+        if saved_history := await self._save_entities(history_to_save):
+            logger.info(f'В историю поиска пользователя {user_id} успешно добавлено {len(saved_history)} записей.')
+
         return validated_items
 
 

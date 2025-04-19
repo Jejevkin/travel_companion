@@ -4,6 +4,7 @@ from typing import Annotated
 
 from async_fastapi_jwt_auth import AuthJWT
 from fastapi import APIRouter, Depends, status, HTTPException
+
 from schemas.users import UserCreate, Token, UserLogin
 from services.token import TokenServiceABC, get_token_service
 from services.user import UserServiceABC, get_user_service
@@ -18,7 +19,6 @@ UserServiceDep = Annotated[UserServiceABC, Depends(get_user_service)]
 
 @router.post(
     '/login',
-    response_model=Token,
     status_code=HTTPStatus.OK,
     description='Authenticate user and provide access and refresh tokens',
 )
@@ -27,7 +27,7 @@ async def login(
         authorize: AuthorizeDep,
         token_service: TokenServiceDep,
         user_service: UserServiceDep,
-):
+) -> Token:
     """
     Аутентифицирует пользователя и выдаёт access и refresh токены.
     """
@@ -41,7 +41,6 @@ async def login(
 
 @router.post(
     '/signup',
-    response_model=Token,
     status_code=status.HTTP_201_CREATED,
     description='Register a new user and provide access and refresh tokens',
 )
@@ -50,7 +49,7 @@ async def signup(
         authorize: AuthorizeDep,
         token_service: TokenServiceDep,
         user_service: UserServiceDep,
-):
+) -> Token:
     """
     Регистрирует нового пользователя и выдаёт access и refresh токены.
     """

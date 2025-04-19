@@ -5,7 +5,7 @@ services:
     expose:
       - 5432
     env_file:
-      - .env.sample
+      - .env
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
@@ -14,14 +14,24 @@ services:
       timeout: 5s
       retries: 5
 
+  redis:
+    image: redis:7.4.2
+    healthcheck:
+      test: [ "CMD", "redis-cli", "ping" ]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
   travel_companion:
     build: ./src
     expose:
       - 5000
     env_file:
-      - .env.sample
+      - .env
     depends_on:
       postgres:
+        condition: service_healthy
+      redis:
         condition: service_healthy
 
   nginx:

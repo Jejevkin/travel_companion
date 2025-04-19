@@ -20,16 +20,35 @@ class BaseRepository(ABC):
         result = await self.db.execute(query)
         return result.scalars().first() if return_first else result.scalars().all()
 
-    async def _save_entity(self, entity):
+    async def _save_entities(self, entities):
         """
-        Сохраняет сущность в базу данных.
+        Сохраняет сущности в базу данных.
         """
-        self.db.add(entity)
+        entities = entities if isinstance(entities, list) else [entities]
+        self.db.add_all(entities)
         try:
             await self.db.commit()
-            await self.db.refresh(entity)
-            return entity
+            for entity in entities:
+                await self.db.refresh(entity)
+            return entities[0] if len(entities) == 1 else entities
+
         except IntegrityError as e:
             await self.db.rollback()
-            logger.error(f'Ошибка при сохранении в базу данных: {e}')
             return None
+        except Exception as e:
+            await self.db.rollback()
+            logger.error(f'Неизвестная ошибка при сохранении в базу данных: {e}')
+            return None
+
+    async def _delete_entity(self, entity):
+        """
+        Удаляет сущность в базу данных.
+        """
+        await self.db.delete(entity)
+        try:
+            await self.db.commit()
+            return True
+        except IntegrityError as e:
+            await self.db.rollback()
+            logger.error(f'Ошибка при удалении из базы данных: {e}')
+            return False

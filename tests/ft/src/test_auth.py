@@ -33,8 +33,13 @@ from ..settings import test_settings
 )
 @pytest.mark.asyncio
 async def test_signup(make_post_request, user_data, expected_status, expected_detail):
+    # Arrange
     url = f'{test_settings.service_url}/api/v1/auth/signup'
+
+    # Act
     headers, status, body = await make_post_request(url, json_data=user_data)
+
+    # Assert
     assert status == expected_status
     if status == HTTPStatus.CREATED:
         assert 'access_token' in body
@@ -45,6 +50,7 @@ async def test_signup(make_post_request, user_data, expected_status, expected_de
 
 @pytest.mark.asyncio
 async def test_login_success(make_post_request, register_user):
+    # Arrange
     user_info = await register_user
     user_data = user_info['user_data']
     url_login = f'{test_settings.service_url}/api/v1/auth/login'
@@ -52,7 +58,11 @@ async def test_login_success(make_post_request, register_user):
         'login': user_data['login'],
         'password': user_data['password']
     }
+
+    # Act
     headers, status, body = await make_post_request(url_login, json_data=login_data)
+
+    # Assert
     assert status == HTTPStatus.OK
     assert 'access_token' in body
     assert 'refresh_token' in body
